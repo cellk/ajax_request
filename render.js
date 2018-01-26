@@ -1,4 +1,4 @@
-var render = (function ($, digitals, wallet) {
+var render = (function ($, digitals, pocket) {
     var params = {
         form: {
             id: "ws_login",
@@ -12,48 +12,6 @@ var render = (function ($, digitals, wallet) {
         }
     };
 
-    var tools = {
-        geo: function geolocalise(callback) {
-            var options = {
-                enableHighAccuracy: true,
-                timeout: 5000,
-                maximumAge: 0
-            };
-
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function (position) {
-                    var coord = {
-                        lat: position.latitude,
-                        lng: position.longitide,
-                        accuracy: position.accuracy
-                    };
-                    callback(coord);
-                }, function (err) {
-                    var errors = {
-                        1: 'Permission denied',
-                        2: 'Position unavailable',
-                        3: 'Request timeout'
-                    };
-                    callback(errors[err.code]);
-                }, options);
-            } else {
-                callback(false);
-            }
-        },
-        jwt: function (token) {
-            var base64Url = token.split('.')[1];
-            var base64 = base64Url.replace('-', '+').replace('_', '/');
-            return JSON.parse(window.atob(base64));
-        },
-        IsJsonString: function (str) {
-            try {
-                JSON.parse(str);
-            } catch (e) {
-                return false;
-            }
-            return true;
-        }
-    }
 
     //private
     function setParams(params) {
@@ -134,7 +92,7 @@ var render = (function ($, digitals, wallet) {
     }
 
     // Rendering retailer's coupons list view
-    function renderCoupons(elCouponID, elSearchID, retailerID) {
+    function renderCoupons(elCouponID, retailerID) {
         var callbacks = {
             success: function (res) {
                 var coupon = res.result;
@@ -181,7 +139,7 @@ var render = (function ($, digitals, wallet) {
 
 
     // Rendering retailer list view
-    function renderRetailers(elRetailerID, elSearchID) {
+    function renderRetailers(elRetailerID) {
         var callbacks = {
             success: function (res) {
                 var retailer = res.result;
@@ -198,100 +156,13 @@ var render = (function ($, digitals, wallet) {
     // Rendering user view
     function renderUser(token) {
         // return data inside a jwt
-        var user = tools.jwt(token);
+        var user = jwt(token);
         console.log(user)
     }
 
-    // Saving user location
-    function saveLocation() {
+    // Rendering wallet
+    function renderWallet(){
 
-    }
-
-    //private
-    function syncWallet() {
-        if (typeof (Storage) === "undefined") {
-            alert("Please update your browser to be able to use this application");
-        } else {
-            var wallet = sessionStorage.getItem('ws_wallet');
-            if (wallet === null) {
-                // No wallet
-                var callbacks = {
-                    success: function (res) {
-                        // set wallet in session storage
-                        sessionStorage.setItem('ws_wallet', res.result);
-                        console.log('Wallet has been synced');
-                    },
-                    error: function (err) {
-                        console.log(err);
-                    }
-                };
-                digitals.query.gd('get', 'api/wallet', {'X-AUTH-TOKEN': localStorage.getItem('ws_digital')}, callbacks);
-            } else {
-                // found wallet - compare with the server ans sync if different from the server
-                var hash = sum(wallet);
-                var callbacks = {
-                    success: function (res) {
-                        console.log(res)
-                        if (res.result.hash === 'false') {
-                            sessionStorage.setItem('ws_wallet', res.result.wallet);
-                        }
-                    },
-                    error: function (err) {
-                        console.log(err)
-                    }
-                };
-                digitals.query.gd('get', 'api/wallet' + hash, {'X-AUTH-TOKEN': localStorage.getItem('ws_digital')}, callbacks);
-            }
-        }
-    }
-
-    // Saving wallet into database
-    function saveWallet() {
-        if (typeof (Storage) === "undefined") {
-            alert("Please update your browser to be able to use this application");
-        } else {
-            var wallet = sessionStorage.getItem('ws_wallet');
-            var data = wallet;
-            var callbacks = {
-                success: function (res) {
-                    console.log(res);
-                },
-                error: function (err) {
-                    console.log("wallet was not saved correctly");
-                    alert(err);
-                }
-            };
-            if(tools.IsJsonString(wallet)) {
-                digitals.query.pp('post', 'api/wallet', data, null, callbacks);
-            }
-        }
-    }
-
-    // Adding or removing coupons from user's wallet
-    // type : add or remove
-    // couponObj : Json
-    function manageWallet(type, retailer, couponObj) {
-
-    }
-
-    // Rendering wallet view
-    function renderWallet(elementID) {
-        var wallet = {
-            IGA: {
-                id: 123,
-                coupons: [
-                    {
-                        "name": "",
-                        "id": 12345,
-                        "image": "",
-                        "expiration": ""
-                    }
-                ]
-            }
-        };
-        syncWallet();
-
-        return wallet;
     }
 
     // Initiate the application
@@ -370,7 +241,7 @@ var render = (function ($, digitals, wallet) {
     return {
         init: init,
         render: {
-            wallet: renderWallet,
+            wallet: pocket.showWallet,
             retailers: renderRetailers,
             coupons: renderCoupons,
             user: renderUser,
@@ -378,7 +249,7 @@ var render = (function ($, digitals, wallet) {
             search: generateSearchForm
         },
         save: {
-            wallet: saveWallet,
+            wallet: pocket.saveWallet,
             geo: saveLocation,
         }
     };
