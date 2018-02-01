@@ -108,33 +108,35 @@ var render = (function ($, digitals, pocket) {
 
     //private
     function generateSearchForm(elSearchID) {
-        var classInput = "search";
-        var input = document.createElement("input");
-        input.type = "text";
-        input.name = "find";
-        input.className = classInput;
-        input.setAttribute("placeholder", "Search");
+        if (elSearchID != "") {
+            var classInput = "search";
+            var input = document.createElement("input");
+            input.type = "text";
+            input.name = "find";
+            input.className = classInput;
+            input.setAttribute("placeholder", "Search");
 
-        document.getElementById(elSearchID).appendChild(input);
+            document.getElementById(elSearchID).appendChild(input);
 
-        $('#' + elSearchID).keyup(function (e) {
-            var word = $('.' + classInput).val();
-            if (word.toLowerCase() == "") {
-                $('li[data-searchList]').show();
-            } else {
-                var search = word.toLowerCase();
-                console.log('searching ... ' + search)
-                var ul = document.getElementById("list");
-                var li = ul.getElementsByTagName('li');
-                for (var i = 0; i < li.length; i++) {
-                    if (li[i].innerHTML.toLowerCase().indexOf(search) > -1) {
-                        li[i].style.display = "";
-                    } else {
-                        li[i].style.display = "none";
+            $('#' + elSearchID).keyup(function (e) {
+                var word = $('.' + classInput).val();
+                if (word.toLowerCase() == "") {
+                    $('li[data-searchList]').show();
+                } else {
+                    var search = word.toLowerCase();
+                    console.log('searching ... ' + search)
+                    var ul = document.getElementById("list");
+                    var li = ul.getElementsByTagName('li');
+                    for (var i = 0; i < li.length; i++) {
+                        if (li[i].innerHTML.toLowerCase().indexOf(search) > -1) {
+                            li[i].style.display = "";
+                        } else {
+                            li[i].style.display = "none";
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
     }
 
 
@@ -161,8 +163,60 @@ var render = (function ($, digitals, pocket) {
     }
 
     // Rendering wallet
-    function renderWallet(){
+    function renderWallet() {
+        var wallet = pocket.get();
+        document.getElementById('list').appendChild(makeUL(wallet));
+        console.table(wallet);
+    }
 
+    // Filtering and searching wallet
+    function generateFilterSearchWallet(elFilterID, elSearchID) {
+        if (elSearchID != "") {
+            var classInput = "search-wallet";
+            var input = document.createElement("input");
+            input.type = "text";
+            input.name = "find-wallet";
+            input.className = classInput;
+            input.setAttribute("placeholder", "Search");
+
+            document.getElementById(elSearchID).appendChild(input);
+
+            $('#' + elSearchID).keyup(function (e) {
+                var word = $('.' + classInput).val();
+                if (word.toLowerCase() == "") {
+                    $('li[data-searchList]').show();
+                } else {
+                    var search = word.toLowerCase();
+                    console.log('searching ... ' + search)
+                    var ul = document.getElementById("list");
+                    var li = ul.getElementsByTagName('li');
+                    for (var i = 0; i < li.length; i++) {
+                        if (li[i].innerHTML.toLowerCase().indexOf(search) > -1) {
+                            li[i].style.display = "";
+                        } else {
+                            li[i].style.display = "none";
+                        }
+                    }
+                }
+            });
+        }
+
+        if (elFilterID != "") {
+            var myDiv = document.getElementById(elFilterID);
+            var array = ["Retailers", "", "Mercades", "Audi"];
+            var selectList = document.createElement("select");
+            selectList.id = "mySelect";
+            myDiv.appendChild(selectList);
+
+            for (var i = 0; i < array.length; i++) {
+                var option = document.createElement("option");
+                option.value = array[i];
+                option.text = array[i];
+                selectList.appendChild(option);
+            }
+
+            // @todo event filter
+        }
     }
 
     // Initiate the application
@@ -240,17 +294,21 @@ var render = (function ($, digitals, pocket) {
     // Public methods
     return {
         init: init,
-        render: {
-            wallet: pocket.showWallet,
-            retailers: renderRetailers,
-            coupons: renderCoupons,
-            user: renderUser,
-            login: renderLoginForm,
-            search: generateSearchForm
+        wallet : {
+          init : renderWallet,
+          filterSearch : generateFilterSearchWallet
         },
-        save: {
-            wallet: pocket.saveWallet,
-            geo: saveLocation,
+        retailers : {
+            init : renderRetailers,
+            search : generateSearchForm
+        },
+        coupons : {
+            init : renderCoupons,
+            search : generateSearchForm
+        },
+        user : {
+            profile : renderUser,
+            login : renderLoginForm,
         }
     };
 
